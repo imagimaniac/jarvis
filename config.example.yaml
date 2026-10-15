@@ -1,0 +1,92 @@
+# Jarvis - config.example.yaml (example, local-only defaults)
+core:
+  name: jarvis
+  timezone: America/New_York  # adjust per user
+
+storage:
+  base_dir: .
+  raw_dir: memory/raw        # append-only, YYYY/MM/DD/
+  db_path: data/jarvis.db
+  structured_dir: memory/structured  # optional exports
+
+paths:
+  # allow absolute or relative; keep local
+
+search:
+  mode: fts5                 # fts5 | hybrid | semantic (semantic later)
+  limit_default: 10
+  snippet_chars: 120
+  recency_boost: 0.15
+  self_boost: 0.25           # boost origin_kind=self for self-query lens
+  external_penalty: 0.0      # keep 0; prefer boost self instead of heavy penalty
+
+extraction:
+  heuristic_only: true       # default for PoC - intelligence secondary
+  confidence_threshold: 0.5
+  mark_inferred: true
+  max_events_per_entry: 20
+
+llm:
+  provider: ollama
+  base_url: http://localhost:11434/v1
+  model_chat: llama3.2            # conversation (default for chat + recall)
+  model_extraction: llama3.2
+  model_retrieval: llama3.2
+  temperature: 0.0
+  max_tokens: 800
+  timeout_seconds: 60
+  keep_alive: 30m  # Ollama model residency; avoids cold reload between idle chats
+  extraction:
+    enabled: false          # strictly optional
+  retrieval_synthesis:
+    enabled: false          # search-first by default
+
+features:
+  semantic: false
+  auto_connect: false        # Phase 3+; keep false initially
+  reflection: false
+  reminders: false           # Phase 5
+  importers: true            # allow opt-in imports
+  gmail_sync: false          # Phase 3, opt-in
+  calendar_sync: false       # Phase 4, opt-in
+  memory_candidates: false   # Phase 1: silent deterministic candidate producer
+  memory_judge: false        # Phase 2: gated Memory Judge over stored candidates
+  memory_judge_apply: false  # Phase 2: judge may apply CONFIRM/UPDATE/SUPERSEDE/FORGET
+  context_engine: true       # Phase 4: deterministic cross-rating context engine (falls back to personal_context)
+  web: false                 # opt-in public web retrieval for current-info questions (public pages only)
+
+web:
+  search_provider: bing_news  # bing_news (keyless RSS, real summaries) | google_news | duckduckgo
+  max_results: 4              # page sources (1-10)
+
+privacy:
+  local_only: true
+  dont_log_prompts: true
+  read_only_external: true   # enforce pull-only, no write-back
+  redact_otp_tokens: true    # avoid storing OTPs/reset tokens
+  encrypt_secrets_at_rest: true  # recommended later (keychain/OS keyring)
+
+sync:
+  mode: pull                 # pull | none; never two-way
+  direction: one_way
+  user_triggered_only: true  # no automatic polling by default
+  include_attachments: false # skip by default
+  max_import_mb: 500
+  dedup_by: [source, origin_id]  # or [source, content_hash]
+
+classification:
+  # importance mapping heuristic weights (tunable)
+  importance:
+    critical_keywords: ["suspicious activity", "unusual transaction", "account locked", "security alert", "urgent"]
+    high_keywords: ["interview", "scheduled", "invitation", "progressed", "offer", "rejected", "bank alert", "payment failure", "deadline"]
+    medium_keywords: ["statement", "invoice", "reminder"]
+    ignore_domains: ["newsletter", "marketing", "unsubscribe", "promo"]
+    ignore_categories: ["promotional", "social", "forums"]  # if available
+
+reminders:
+  enabled: false
+  unseen_boost: 1.0
+  urgency_decay_hours: 24
+  max_surface: 3             # avoid spam
+  interrupt_threshold: HIGH  # only surface >= threshold unless explicit query
+  context_aware: true        # defer low-prio if engaged

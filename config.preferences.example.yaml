@@ -1,0 +1,25 @@
+# TEMPLATE - copy to data/preferences.yaml. Kept out of memory deliberately:
+# memory is for things to recall, these are standing instructions. Storing them
+# as entries would let Jarvis "recall" the user's own rules as past recollections.
+#
+# Behaviour here is enforced in code (see app/core/recall.py PRELUDE and the
+# check_citations guard); this file records what the user has asked for.
+
+language:
+  respond_in_prompt_language: true
+
+accuracy:
+  # Show the working rather than asserting a total.
+  verify_arithmetic: true
+  show_calculation_steps: true
+
+content_integrity:
+  # Do not merge distinct song lyrics or creative texts into one context without
+  # clear separation.
+  keep_creative_texts_separated: true
+  label_boundaries_in_quoted_creative_text: true
+
+domain_notes:
+  indian_income_tax:
+    track_financial_year_applicability_dates: true
+    cite_financial_year_explicitly: true

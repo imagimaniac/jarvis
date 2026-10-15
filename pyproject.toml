@@ -1,0 +1,19 @@
+[tool.pytest.ini_options]
+# Tool configuration only: this project is run from source (requirements.txt),
+# not installed as a package, so there is deliberately no [project] table here.
+testpaths = ["tests"]
+# `python3 -m pytest` puts the CWD on sys.path by accident; a bare `pytest`
+# would not. Making the import root explicit keeps both entry points working.
+pythonpath = ["."]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+]
+# Third-party deprecations raised from inside dependencies. Application code
+# warnings are NOT filtered here so they stay visible during development.
+# Note: starlette's StarletteDeprecationWarning subclasses UserWarning, not
+# DeprecationWarning, hence the explicit category here.
+filterwarnings = [
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated:UserWarning",
+]

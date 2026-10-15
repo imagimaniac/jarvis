@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# Single-word entrypoint for the local Jarvis service.
+#
+# Jarvis runs as a user LaunchAgent (com.example.jarvis) and reads its API token
+# from the login Keychain, so none of these commands ever need the token to be
+# exported. Reachable only at http://127.0.0.1:8123 locally, and over the
+# Tailnet via the existing `tailscale serve` mapping. Override the project
+# location with JARVIS_HOME if needed.
+set -euo pipefail
+
+# Resolve this script's real location (following symlinks) so the repository is
+# found relative to it; JARVIS_HOME overrides when needed.
+_src="${BASH_SOURCE[0]}"
+while [[ -L "$_src" ]]; do
+  _dir="$(cd -P "$(dirname "$_src")" && pwd)"
+  _src="$(readlink "$_src")"
+  [[ "$_src" != /* ]] && _src="$_dir/$_src"
+done
+_REPO="$(cd -P "$(dirname "$_src")/.." && pwd)"
+JARVIS_HOME="${JARVIS_HOME:-$_REPO}"
+SCRIPTS="$JARVIS_HOME/scripts"
+
+usage() {
+  cat <<'EOF'
+Usage: jarvis [command]
+
+  (none)    Ensure Jarvis is running, then show status
+  status    Show whether Jarvis is running and healthy
+  start     Start Jarvis (via the Keychain-backed launchd agent)
+  stop      Stop Jarvis (unloads the agent; it starts again at next login)
+  restart   Restart Jarvis
+  logs [-f] [N]   Show the last N log lines (default 50); -f to follow
+
+Jarvis binds to 127.0.0.1:8123 and is reachable only over your Tailnet.
+EOF
+}
+
+require_home() {
+  if [[ ! -x "$SCRIPTS/start_jarvis.sh" ]]; then
+    echo "jarvis: cannot find Jarvis at $JARVIS_HOME (set JARVIS_HOME)" >&2
+    exit 1
+  fi
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  ""|up|ensure)
+    require_home
+    if ! "$SCRIPTS/status_jarvis.sh" --quiet; then
+      "$SCRIPTS/start_jarvis.sh"
+    fi
+    exec "$SCRIPTS/status_jarvis.sh"
+    ;;
+  status)
+    require_home
+    exec "$SCRIPTS/status_jarvis.sh" "${@:2}"
+    ;;
+  start)
+    require_home
+    exec "$SCRIPTS/start_jarvis.sh"
+    ;;
+  stop)
+    require_home
+    exec "$SCRIPTS/stop_jarvis.sh"
+    ;;
+  restart)
+    require_home
+    exec "$SCRIPTS/restart_jarvis.sh"
+    ;;
+  logs)
+    require_home
+    log="${JARVIS_LOG:-}"
+    if [[ -z "$log" ]]; then
+      if [[ -f "$JARVIS_HOME/data/jarvis-launchd.log" ]]; then
+        log="$JARVIS_HOME/data/jarvis-launchd.log"
+      else
+        log="$JARVIS_HOME/data/jarvis-server.log"
+      fi
+    fi
+    shift || true
+    if [[ "${1:-}" == "-f" || "${1:-}" == "--follow" ]]; then
+      exec tail -f "$log"
+    fi
+    exec tail -n "${1:-50}" "$log"
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    echo "jarvis: unknown command '$cmd'" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

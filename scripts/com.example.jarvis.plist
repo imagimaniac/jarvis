@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.jarvis</string>
+
+    <!-- Start Jarvis through the lifecycle wrapper, which reads the token from
+         the login Keychain and runs the server in the foreground. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/YOUR_USERNAME/Projects/jarvis/scripts/launchd_start_jarvis.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/YOUR_USERNAME/Projects/jarvis</string>
+
+    <!-- No JARVIS_TOKEN here: the wrapper reads it from the Keychain at start. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/YOUR_USERNAME/miniconda3/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>JARVIS_PYTHON</key>
+        <string>/Users/YOUR_USERNAME/miniconda3/bin/python</string>
+        <key>JARVIS_WEB</key>
+        <string>1</string>
+        <key>JARVIS_MEMORY_CANDIDATES</key>
+        <string>1</string>
+    </dict>
+
+    <!-- Start once at login. KeepAlive restarts the server only after an
+         UNSUCCESSFUL (crash) exit: SuccessfulExit=false means a clean exit
+         (including the intentional SIGTERM from stop_jarvis.sh) stays stopped,
+         while a crash/kill -9 is recovered automatically. ThrottleInterval
+         bounds any restart backoff so a failing launch cannot loop rapidly. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/YOUR_USERNAME/Projects/jarvis/data/jarvis-launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/YOUR_USERNAME/Projects/jarvis/data/jarvis-launchd.log</string>
+</dict>
+</plist>

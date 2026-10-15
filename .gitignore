@@ -1,0 +1,45 @@
+# Jarvis
+# Data & raw memory (sacred but local-only; never commit user data by default)
+/data/
+/memory/raw/
+/memory/structured/
+
+# Exports/logs/temp
+*.log
+.DS_Store
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+.env
+.env.*
+!.env.example
+
+# Local config/secrets
+config.yaml
+secrets/
+tokens/
+.credentials/
+*.token
+*.json.key
+*gmail_oauth_token*.json
+
+# IDE
+.vscode/
+.idea/
+
+# Python tooling / venvs / caches
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Backups / runtime artifacts
+*.bak
+*.swp
+*.pid
+*.sqlite3

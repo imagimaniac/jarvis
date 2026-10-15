@@ -1,0 +1,114 @@
+{
+  "_comment": "EXAMPLE manifest. Copy to data/seed/canonical_personal_memories.json and fill in with YOUR OWN non-sensitive facts (identical shape/schema). /data/ is gitignored on purpose - never commit real profile data. scripts/seed_canonical_memories.py --seed-file defaults to the local copy in data/seed/ and is idempotent. The records below are deliberately synthetic placeholders to demonstrate the schema and keep tests hermetic.",
+  "schema_version": 1,
+  "records": [
+    {
+      "key": "preference_natural_conversational_interaction",
+      "type": "PREFERENCE",
+      "claim": "Example Person prefers natural, conversational interaction rather than robotic or overly formal responses.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "preference_practical_direct_guidance",
+      "type": "PREFERENCE",
+      "claim": "Example Person prefers practical, direct guidance and does not like being overwhelmed with many simultaneous options.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "preference_concise_tables_and_comparisons",
+      "type": "PREFERENCE",
+      "claim": "Example Person prefers concise tables and structured comparisons when making decisions.",
+      "importance": 4,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "preference_authentic_grounded_claims",
+      "type": "PREFERENCE",
+      "claim": "Example Person values authenticity and prefers claims to be grounded rather than confidently invented.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "preference_memory_lifecycle_operations",
+      "type": "PREFERENCE",
+      "claim": "Example Person wants personal memories to support a lifecycle of remembering, updating, superseding, and forgetting.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "learning_first_principles_step_by_step",
+      "type": "LEARNING",
+      "claim": "Example Person prefers explanations that start from first principles and build step by step.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "learning_understand_why",
+      "type": "LEARNING",
+      "claim": "Example Person values understanding why something works, not merely learning the procedure.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "learning_intuitive_analogies",
+      "type": "LEARNING",
+      "claim": "Example Person finds intuitive analogies useful when learning unfamiliar concepts.",
+      "importance": 4,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "project_private_personal_ai_assistant_jarvis",
+      "type": "PROJECT",
+      "claim": "User is building a private personal AI assistant called Jarvis.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Project-level example record about Jarvis itself."
+    },
+    {
+      "key": "project_jarvis_personal_assistant",
+      "type": "PROJECT",
+      "claim": "Jarvis is intended to function as a personal assistant rather than merely a chatbot.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Project-level example record about Jarvis itself."
+    },
+    {
+      "key": "goal_jarvis_understands_personal_context",
+      "type": "GOAL",
+      "claim": "User wants Jarvis to gradually understand their goals, preferences, projects, and recurring workflows.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    },
+    {
+      "key": "goal_jarvis_private_and_local",
+      "type": "GOAL",
+      "claim": "User wants Jarvis to remain private and local, with personal data kept on their own system rather than sent to cloud services.",
+      "importance": 5,
+      "confidence": 1.0,
+      "sensitive": false,
+      "rationale": "Synthetic example record demonstrating the schema."
+    }
+  ]
+}

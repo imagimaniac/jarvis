@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0B0F14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Jarvis">
+  <meta name="description" content="Private local assistant">
+  <title>Jarvis</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      color-scheme: dark;
+      --bg: #0B0F14;
+      --panel: #111827;
+      --field: #111827;
+      --line: #1F2937;
+      --text: #D1D5DB;
+      --text-user: #9CA3AF;
+      --muted: #9CA3AF;
+      --signal: #38BDF8;
+      --signal-active: #F0E2A6;
+      --signal-rail: #E8D58A;
+      --value: #D1D5DB;
+      --amber: #d3ad68;
+      --red: #dc827d;
+      --font-ui: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+    }
+    html, body { width: 100%; height: 100%; margin: 0; background: var(--bg); }
+    body {
+      color: var(--text);
+      font: 16px/1.55 var(--font-ui);
+      overflow: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+    button, textarea { font: inherit; }
+    .topbar, .connection, .speaker, .status, .send, .unlock-title, .unlock input { font-family: var(--font-mono); }
+    .app {
+      width: min(100%, 820px);
+      height: 100vh;
+      height: 100dvh;
+      min-height: 0;
+      margin: 0 auto;
+      padding: calc(10px + var(--safe-t)) calc(16px + var(--safe-r)) 0 calc(16px + var(--safe-l));
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      min-height: 52px;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      letter-spacing: .12em;
+      font-size: 14px;
+    }
+    .brand { color: var(--signal); font-weight: 700; letter-spacing: .16em; }
+    .connection { color: var(--muted); font-size: 11px; letter-spacing: .08em; }
+    .connection::before { content: "●"; margin-right: 7px; color: var(--signal); }
+    .connection.offline::before { color: var(--amber); }
+    .conversation {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 24px 0 18px;
+      scrollbar-color: var(--line) transparent;
+    }
+    .empty-state { padding: 8px 0; color: var(--muted); font-size: 14px; }
+    .message { padding: 0 0 26px; }
+    .message-jarvis {
+      max-width: 78ch;
+      border-left: 1px solid var(--signal-rail);
+      padding-left: 12px;
+    }
+    .message-jarvis.is-streaming { border-left-color: var(--signal-active); }
+    .message-user {
+      width: fit-content;
+      max-width: min(88%, 72ch);
+      margin-left: auto;
+      border-right: 1px solid var(--signal-rail);
+      padding-right: 12px;
+      text-align: right;
+    }
+    .speaker { margin-bottom: 5px; color: var(--signal); font-size: 11px; font-weight: 650; letter-spacing: .12em; }
+    .message-content {
+      color: var(--text);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      tab-size: 4;
+      font-size: 16px;
+      line-height: 1.68;
+    }
+    .message-user .message-content { color: var(--text-user); }
+    .quant-value { color: var(--value); font-weight: 650; font-variant-numeric: tabular-nums; }
+    .status {
+      min-height: 20px;
+      flex: 0 0 auto;
+      padding: 2px 0 7px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .status.warning { color: var(--amber); }
+    .status.error { color: var(--red); }
+    .web-meta {
+      margin-top: 7px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: .06em;
+    }
+    .web-meta::before { content: "\25E6"; margin-right: 6px; color: var(--signal); }
+    .web-meta.warning::before { color: var(--amber); }
+    .web-cite { color: var(--signal); text-decoration: none; font-weight: 600; }
+    .web-cite:hover { text-decoration: underline; }
+    .web-sources {
+      margin-top: 9px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .web-sources-title {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .web-source a { color: var(--signal); text-decoration: none; }
+    .web-source a:hover { text-decoration: underline; }
+    .composer {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      padding: 12px 0 calc(10px + var(--safe-b));
+      background: var(--panel);
+    }
+    .composer textarea {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      max-height: 144px;
+      min-height: 48px;
+      resize: none;
+      overflow-y: auto;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      outline: none;
+      background: var(--field);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    .composer textarea { font-family: var(--font-ui); }
+    .composer textarea:focus { border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal); }
+    .composer textarea::placeholder { color: var(--muted); opacity: 1; }
+    .send {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 48px;
+      border: 1px solid var(--signal);
+      border-radius: 5px;
+      background: transparent;
+      color: var(--signal);
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .send:focus-visible, .unlock button:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+    .send:disabled { opacity: 1; border-color: var(--line); color: var(--muted); cursor: default; }
+    .unlock {
+      position: fixed;
+      z-index: 2;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(11, 15, 20, .96);
+    }
+    .unlock[hidden] { display: none; }
+    .unlock-box { width: min(100%, 420px); }
+    .unlock-title { margin-bottom: 8px; letter-spacing: .12em; }
+    .unlock-copy { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+    .unlock-form { display: flex; gap: 8px; }
+    .unlock input {
+      min-width: 0;
+      flex: 1;
+      min-height: 46px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--field);
+      color: var(--text);
+      font: inherit;
+      font-size: 16px;
+    }
+    .unlock button {
+      min-width: 68px;
+      min-height: 46px;
+      border: 1px solid var(--signal);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--signal);
+      cursor: pointer;
+    }
+    @media (min-width: 700px) {
+      .app { padding-left: 28px; padding-right: 28px; }
+      .conversation { padding-top: 34px; }
+    }
+    @media (max-height: 520px) {
+      .topbar { min-height: 38px; }
+      .conversation { padding-top: 12px; }
+      .message { padding-bottom: 16px; }
+      .composer { padding-top: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">JARVIS</div>
+      <div id="connection" class="connection" aria-label="Connection status">ONLINE</div>
+    </header>
+
+    <main id="conversation" class="conversation" aria-label="Conversation" aria-live="off">
+      <div id="emptyState" class="empty-state">What would you like to know?</div>
+    </main>
+
+    <div id="chatStatus" class="status" role="status" aria-live="polite"></div>
+    <form id="chatForm" class="composer">
+      <textarea id="chatMessage" rows="1" maxlength="4000" aria-label="Message Jarvis"
+        placeholder="Ask Jarvis..." autocomplete="off"></textarea>
+      <button id="chatBtn" class="send" type="submit" aria-label="Send message">↑</button>
+    </form>
+  </div>
+
+  <section id="unlock" class="unlock" aria-labelledby="unlockTitle" hidden>
+    <div class="unlock-box">
+      <div id="unlockTitle" class="unlock-title">JARVIS ACCESS</div>
+      <p id="unlockMsg" class="unlock-copy">Enter your access token to continue.</p>
+      <form id="unlockForm" class="unlock-form">
+        <input id="tokenInput" type="password" aria-label="Access token" placeholder="Access token"
+          autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <button type="submit">Unlock</button>
+      </form>
+    </div>
+  </section>
+
+<script>
+(function () {
+  "use strict";
+
+  var TOKEN_KEY = "jarvis_token";
+  var history = [];
+  var isStreaming = false;
+  var tokenInput = document.getElementById("tokenInput");
+  var unlock = document.getElementById("unlock");
+  var unlockMsg = document.getElementById("unlockMsg");
+  var box = document.getElementById("chatMessage");
+  var button = document.getElementById("chatBtn");
+  var transcript = document.getElementById("conversation");
+  var status = document.getElementById("chatStatus");
+
+  function getToken() {
+    try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; }
+  }
+  function setToken(value) { localStorage.setItem(TOKEN_KEY, value); }
+
+  async function api(path, options) {
+    options = options || {};
+    var token = getToken();
+    if (!token) {
+      showUnlock("Enter your access token to continue.");
+      throw new Error("unauthenticated");
+    }
+    var headers = Object.assign({}, options.headers || {});
+    headers["Authorization"] = "Bearer " + token;
+    if (options.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+    var response = await fetch(path, Object.assign({}, options, { headers: headers }));
+    if (response.status === 401) {
+      showUnlock("Access was not accepted. Re-enter your token.");
+      throw new Error("unauthorized");
+    }
+    return response;
+  }
+
+  function showUnlock(message) {
+    unlockMsg.textContent = message;
+    unlock.hidden = false;
+    tokenInput.focus();
+  }
+
+  function addMessage(role, content) {
+    var empty = document.getElementById("emptyState");
+    if (empty) empty.remove();
+    var message = document.createElement("section");
+    message.className = "message " + (role === "user" ? "message-user" : "message-jarvis");
+    var speaker = document.createElement("div");
+    speaker.className = "speaker";
+    speaker.textContent = role === "user" ? "YOU" : "JARVIS";
+    var body = document.createElement("div");
+    body.className = "message-content";
+    body.textContent = content || "";
+    message.appendChild(speaker);
+    message.appendChild(body);
+    transcript.appendChild(message);
+    transcript.scrollTop = transcript.scrollHeight;
+    return body;
+  }
+
+  function setStatus(message, kind) {
+    status.textContent = message;
+    status.className = "status" + (kind ? " " + kind : "");
+  }
+
+  /* BEGIN_ANSWER_RENDERER */
+  var INTERNAL_LABEL_RE = /(^|[^A-Za-z])[*_]{0,2}(?:memory|recorded|inference)\s*[*_]{0,2}\s*[:：]\s*[*_]{0,2}\s*([A-Za-z]?)/gi;
+  var INTERNAL_ATTRIB_RE = /\b(?:a\s+)?third party recorded\s+(?:that|this)\b\s*/gi;
+
+  function stripInternalLabels(text) {
+    return (text || "")
+      .replace(INTERNAL_ATTRIB_RE, "")
+      .replace(INTERNAL_LABEL_RE, function (match, lead, next) {
+        return lead + (next ? next.toUpperCase() : "");
+      });
+  }
+
+  function visibleAnswerText(text) {
+    // Keep the existing citation-marker hiding while leaving all other
+    // whitespace intact, including tables and fenced/terminal-style layouts.
+    // Also hide any internal provenance labels the model leaks through.
+    return stripInternalLabels(text).replace(/\[\d+\]/g, "").replace(/\[\d*$/, "");
+  }
+
+  function quantitativeSegments(text) {
+    var patterns = [
+      /[$€£¥₹]\s?(?:(?:\d{1,3}(?:,\d{3})+)|\d+)(?:\.\d+)?(?:\s?(?:K|M|B|LPA|LAKH|CRORE))?/gi,
+      /\b\d{1,3}(?:,\d{3})*(?:\.\d+)?\s?%/g,
+      /\b\d+(?:\.\d+)?\s?(?:[-–—]\s?\d+(?:\.\d+)?)\s?(?:years?|months?|weeks?|days?|hours?|minutes?|seconds?|accounts?|users?|items?|people|calls?|records?|customers?|requests?|GB|MB|TB|km|miles?|kg|lbs?|times?|x)\b/gi,
+      /\b\d+(?:\.\d+)?\s?(?:K|M|B)\s?(?:accounts?|users?|items?|people|calls?|records?|customers?|requests?)\b/gi,
+      /\b\d+(?:\.\d+)?\s?(?:years?|months?|weeks?|days?|hours?|minutes?|seconds?|accounts?|users?|items?|people|calls?|records?|customers?|requests?|GB|MB|TB|km|miles?|kg|lbs?|times?|x)\b/gi,
+      /\b(?:19|20)\d{2}-(?:0?[1-9]|1[0-2])-(?:0?[1-9]|[12]\d|3[01])\b/g,
+      /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?[,]?\s+(?:19|20)\d{2}\b/gi,
+      /\b\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(?:19|20)\d{2}\b/gi
+    ];
+    var matches = [];
+    patterns.forEach(function (pattern) {
+      var match;
+      while ((match = pattern.exec(text)) !== null) {
+        var start = match.index;
+        var end = start + match[0].length;
+        var before = start > 0 ? text.charAt(start - 1) : "";
+        var after = end < text.length ? text.charAt(end) : "";
+        if (/[A-Za-z0-9_]/.test(before) || /[A-Za-z0-9_]/.test(after)) continue;
+        // Long ungrouped digit strings are more likely identifiers or
+        // credential material than user-facing quantities.
+        if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(match[0]) && (match[0].match(/\d/g) || []).length >= 10) continue;
+        matches.push({ start: start, end: end, text: match[0] });
+      }
+    });
+    matches.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
+    var selected = [];
+    var cursor = -1;
+    matches.forEach(function (match) {
+      if (match.start < cursor) return;
+      selected.push(match);
+      cursor = match.end;
+    });
+    var segments = [];
+    cursor = 0;
+    selected.forEach(function (match) {
+      if (match.start > cursor) segments.push({ text: text.slice(cursor, match.start), emphasis: false });
+      segments.push({ text: match.text, emphasis: true });
+      cursor = match.end;
+    });
+    if (cursor < text.length || !segments.length) segments.push({ text: text.slice(cursor), emphasis: false });
+    return segments;
+  }
+
+  var WEB_CITE_RE = /[\[(]\s*W\s*(\d+)\s*[\])]/gi;
+
+  function appendAnswerChunk(container, chunk) {
+    quantitativeSegments(chunk).forEach(function (segment) {
+      if (segment.emphasis) {
+        var strong = document.createElement("strong");
+        strong.className = "quant-value";
+        strong.textContent = segment.text;
+        container.appendChild(strong);
+      } else {
+        container.appendChild(document.createTextNode(segment.text));
+      }
+    });
+  }
+
+  function renderAnswerText(container, text, links) {
+    container.replaceChildren();
+    var clean = visibleAnswerText(text);
+    // No link map (streaming pass): keep any [Wn] markers as plain text.
+    // With a link map (final pass): turn backed citations into clickable links
+    // and drop dangling ones so no unbacked citation is ever shown.
+    if (!links) {
+      appendAnswerChunk(container, clean);
+      return;
+    }
+    var cursor = 0;
+    var match;
+    WEB_CITE_RE.lastIndex = 0;
+    while ((match = WEB_CITE_RE.exec(clean)) !== null) {
+      appendAnswerChunk(container, clean.slice(cursor, match.index));
+      var url = links[match[1]];
+      if (url) {
+        var cite = document.createElement("a");
+        cite.className = "web-cite";
+        cite.href = url;
+        cite.target = "_blank";
+        cite.rel = "noopener noreferrer";
+        cite.textContent = "[W" + match[1] + "]";
+        container.appendChild(cite);
+      }
+      cursor = WEB_CITE_RE.lastIndex;
+    }
+    appendAnswerChunk(container, clean.slice(cursor));
+  }
+  /* END_ANSWER_RENDERER */
+
+  /* BEGIN_WEB_META */
+  /* Live-web status line. Shows what the backend actually did, using the
+     web_status / web_query / web_attempted fields on the SSE "done" event.
+     It never claims success unless evidence was truly returned, and it stays
+     silent for responses that did not search the web. */
+  function webSearchMeta(payload) {
+    if (!payload) return null;
+    var status = payload.web_status || "";
+    var attempted = payload.web_attempted === true;
+    var query = (payload.web_query || "").trim();
+    if (status === "ok" || status === "url") {
+      var label = "Searched the web";
+      if (query) {
+        var shown = query.length > 64 ? query.slice(0, 63).trim() + "\u2026" : query;
+        label += " \u00b7 " + shown;
+      }
+      return { text: label, warning: false };
+    }
+    if (!attempted) return null;            // no search happened: stay quiet
+    if (status === "error" || status === "url_error") {
+      return { text: "Live sources unavailable", warning: true };
+    }
+    if (status === "no_query") {
+      return { text: "Live search skipped \u00b7 no usable query", warning: false };
+    }
+    return { text: "No live sources found", warning: false };
+  }
+
+  function renderWebMeta(container, payload) {
+    var meta = webSearchMeta(payload);
+    var message = container && container.parentElement;
+    if (!meta || !message) return;
+    var existing = message.querySelector(".web-meta");
+    if (existing) existing.remove();
+    var line = document.createElement("div");
+    line.className = "web-meta" + (meta.warning ? " warning" : "");
+    line.textContent = meta.text;
+    message.appendChild(line);
+  }
+
+  function sourceLinkMap(evidence) {
+    var map = {};
+    (evidence || []).forEach(function (item) {
+      var label = String((item && item.label) || "").replace(/[^0-9]/g, "");
+      if (label && item && item.url) map[label] = item.url;
+    });
+    return map;
+  }
+
+  function renderSources(container, evidence) {
+    var message = container && container.parentElement;
+    if (!message) return;
+    var existing = message.querySelector(".web-sources");
+    if (existing) existing.remove();
+    if (!evidence || !evidence.length) return;
+    var box = document.createElement("div");
+    box.className = "web-sources";
+    var title = document.createElement("div");
+    title.className = "web-sources-title";
+    title.textContent = "Sources";
+    box.appendChild(title);
+    evidence.forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "web-source";
+      var link = document.createElement("a");
+      link.href = item.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = (item.label || "source") + " \u00b7 " + (item.title || item.url);
+      row.appendChild(link);
+      box.appendChild(row);
+    });
+    message.appendChild(box);
+  }
+  /* END_WEB_META */
+
+
+  async function sendMessage() {
+    var message = box.value;
+    if (!message.trim() || isStreaming) return;
+    isStreaming = true;
+    button.disabled = true;
+    box.disabled = true;
+    box.value = "";
+    resizeInput();
+    addMessage("user", message);
+    var priorHistory = history.slice(-8);
+    history.push({ role: "user", content: message });
+    var answerNode = addMessage("assistant", "");
+    answerNode.parentElement.classList.add("is-streaming");
+    var answer = "";
+    var webEvidence = [];
+    var completed = false;
+    var failed = false;
+    setStatus("Thinking...", "");
+
+    try {
+      var response = await api("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: message, history: priorHistory })
+      });
+      if (!response.ok) {
+        var errorBody = await response.text();
+        var detail = "Request failed (" + response.status + ").";
+        try { detail = JSON.parse(errorBody).detail || detail; } catch (e) {}
+        throw new Error(detail);
+      }
+      if (!response.body) throw new Error("Chat stream is unavailable.");
+
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = "";
+      function handleFrame(frame) {
+        var eventName = "message";
+        var data = "";
+        frame.split(/\r?\n/).forEach(function (line) {
+          if (line.indexOf("event:") === 0) eventName = line.slice(6).trim();
+          if (line.indexOf("data:") === 0) data += line.slice(5).trim();
+        });
+        if (!data) return;
+        var payload = JSON.parse(data);
+        if (eventName === "delta") {
+          answer += payload.text || "";
+          renderAnswerText(answerNode, answer);
+          transcript.scrollTop = transcript.scrollHeight;
+        } else if (eventName === "web_evidence") {
+          webEvidence = (payload && payload.evidence) || [];
+        } else if (eventName === "done") {
+          completed = true;
+          answerNode.parentElement.classList.remove("is-streaming");
+          // Prefer the server's final (label-scrubbed) answer over raw deltas.
+          if (typeof payload.answer === "string" && payload.answer) answer = payload.answer;
+          // Final pass: link backed [Wn] citations and drop any dangling ones.
+          renderAnswerText(answerNode, answer, sourceLinkMap(webEvidence));
+          renderWebMeta(answerNode, payload);
+          renderSources(answerNode, webEvidence);
+        } else if (eventName === "error") {
+          failed = true;
+          answerNode.parentElement.classList.remove("is-streaming");
+          if (!answer) answerNode.textContent = "I couldn't complete that response.";
+          setStatus(payload.incomplete ? "Response interrupted." : "Jarvis couldn't complete the response.", "warning");
+        }
+        // Evidence and citation events remain part of the API; they are not
+        // surfaced in this conversational view.
+      }
+
+      while (true) {
+        var part = await reader.read();
+        buffer += decoder.decode(part.value || new Uint8Array(), { stream: !part.done });
+        var boundary;
+        while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+          handleFrame(buffer.slice(0, boundary));
+          buffer = buffer.slice(boundary + 2);
+        }
+        if (part.done) break;
+      }
+      if (buffer.trim()) handleFrame(buffer);
+      if (!completed && !failed) throw new Error("Chat stream ended before completion.");
+      if (completed) {
+        history.push({ role: "assistant", content: answer });
+        setStatus("", "");
+      }
+    } catch (error) {
+      answerNode.parentElement.classList.remove("is-streaming");
+      if (error.message !== "unauthorized" && error.message !== "unauthenticated") {
+        if (!answer) answerNode.textContent = "I couldn't reach Jarvis.";
+        setStatus(error.message || "Could not reach Jarvis.", "error");
+      }
+    } finally {
+      answerNode.parentElement.classList.remove("is-streaming");
+      isStreaming = false;
+      button.disabled = false;
+      box.disabled = false;
+      if (unlock.hidden) box.focus();
+      else tokenInput.focus();
+    }
+  }
+
+  function resizeInput() {
+    box.style.height = "auto";
+    box.style.height = Math.min(box.scrollHeight, 144) + "px";
+  }
+
+  document.getElementById("chatForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+    sendMessage();
+  });
+  box.addEventListener("input", resizeInput);
+  box.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      if (!isStreaming) sendMessage();
+    }
+  });
+  document.getElementById("unlockForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+    var value = tokenInput.value.trim();
+    if (!value) return;
+    try {
+      setToken(value);
+      tokenInput.value = "";
+      unlock.hidden = true;
+      box.focus();
+      setStatus("Ready.", "");
+    } catch (error) {
+      showUnlock("Browser storage is unavailable.");
+    }
+  });
+
+  function renderConnection() {
+    var indicator = document.getElementById("connection");
+    // This reflects browser network connectivity only, not Jarvis server/auth health.
+    var online = navigator.onLine;
+    indicator.textContent = online ? "ONLINE" : "OFFLINE";
+    indicator.classList.toggle("offline", !online);
+    indicator.setAttribute("aria-label", online ? "Network online" : "Network offline");
+  }
+  window.addEventListener("online", renderConnection);
+  window.addEventListener("offline", renderConnection);
+  renderConnection();
+
+  if (!getToken()) showUnlock("Enter your access token to continue.");
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {});
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "_comment": "TEMPLATE - copy to data/seed/profile.json and fill in. Keep one fact per entry: a citation should point at exactly one claim. scripts/seed_memory.py ingests this via the canonical writer path and is idempotent, so re-running only adds what is new. Note /data/ is gitignored on purpose - never commit real profile data.",
+
+  "_fields": {
+    "text": "required, the fact itself, first person",
+    "category": "identity | professional | interests | personal | travel | knowledge",
+    "importance": "HIGH | MEDIUM | LOW (HIGH is preferred in ranking)",
+    "sensitive": "true marks DOB, address, employer, family - set for anything you would not paste publicly",
+    "people": "facet list, matched exactly by recall",
+    "places": "facet list",
+    "topics": "facet list",
+    "projects": "facet list"
+  },
+
+  "facts": [
+    {"category": "identity", "importance": "HIGH", "text": "My full name is EXAMPLE PERSON."},
+    {"category": "identity", "importance": "MEDIUM", "sensitive": true, "text": "My date of birth is 1 January 1990."},
+    {"category": "identity", "importance": "HIGH", "sensitive": true, "text": "I currently live in EXAMPLE CITY.", "places": ["EXAMPLE CITY"]},
+    {"category": "professional", "importance": "HIGH", "sensitive": true, "text": "I work as a EXAMPLE ROLE at EXAMPLE EMPLOYER.", "people": ["EXAMPLE EMPLOYER"], "topics": ["example topic"]},
+    {"category": "interests", "importance": "LOW", "text": "I am interested in EXAMPLE HOBBY.", "topics": ["example hobby"]}
+  ]
+}
